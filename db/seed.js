@@ -26,28 +26,27 @@ async function seed() {
   const client = getClient();
   await client.execute(SCHEMA_SQL);
 
-  const statements = lessons.map((lesson) => ({
-    sql: UPSERT_SQL,
-    args: [
-      lesson.slug,
-      lesson.title,
-      lesson.language,
-      lesson.category,
-      lesson.difficulty,
-      lesson.keywords,
-      lesson.syntax,
-      JSON.stringify(lesson.facts),
-      lesson.explanation,
-      lesson.code,
-      lesson.filename,
-      lesson.output,
-      JSON.stringify(lesson.steps),
-      JSON.stringify(lesson.related_languages)
-    ]
-  }));
-
-  // One atomic batch instead of N separate round trips.
-  await client.batch(statements, 'write');
+  for (const lesson of lessons) {
+    await client.execute({
+      sql: UPSERT_SQL,
+      args: [
+        lesson.slug,
+        lesson.title,
+        lesson.language,
+        lesson.category,
+        lesson.difficulty,
+        lesson.keywords,
+        lesson.syntax,
+        JSON.stringify(lesson.facts),
+        lesson.explanation,
+        lesson.code,
+        lesson.filename,
+        lesson.output,
+        JSON.stringify(lesson.steps),
+        JSON.stringify(lesson.related_languages)
+      ]
+    });
+  }
 
   console.log(`Seeded ${lessons.length} lesson(s).`);
 }
