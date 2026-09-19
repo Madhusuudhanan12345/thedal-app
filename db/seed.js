@@ -10,6 +10,9 @@ const { getClient } = require('./client');
 const { SCHEMA_SQL } = require('./schema');
 const lessons = require('./lessons-data');
 
+// No trailing semicolon — some Turso client/protocol versions reject a
+// statement sent over HTTP if it ends with one, treating it as more than
+// one statement.
 const UPSERT_SQL = `
 INSERT INTO lessons
   (slug, title, language, category, difficulty, keywords, syntax, facts, explanation, code, filename, output, steps, related_languages)
@@ -19,7 +22,7 @@ ON CONFLICT(slug) DO UPDATE SET
   difficulty=excluded.difficulty, keywords=excluded.keywords, syntax=excluded.syntax,
   facts=excluded.facts, explanation=excluded.explanation, code=excluded.code,
   filename=excluded.filename, output=excluded.output, steps=excluded.steps,
-  related_languages=excluded.related_languages;
+  related_languages=excluded.related_languages
 `;
 
 async function seed() {
@@ -27,31 +30,41 @@ async function seed() {
   await client.execute(SCHEMA_SQL);
 
   for (const lesson of lessons) {
-    await client.execute({
-      sql: UPSERT_SQL,
-      args: [
-        lesson.slug,
-        lesson.title,
-        lesson.language,
-        lesson.category,
-        lesson.difficulty,
-        lesson.keywords,
-        lesson.syntax,
-        JSON.stringify(lesson.facts),
-        lesson.explanation,
-        lesson.code,
-        lesson.filename,
-        lesson.output,
-        JSON.stringify(lesson.steps),
-        JSON.stringify(lesson.related_languages)
-      ]
-    });
+    try {
+      await client.execute({
+        sql: UPSERT_SQL,
+        args: [
+          lesson.slug,
+          lesson.title,
+          lesson.language,
+          lesson.category,
+          lesson.difficulty,
+          lesson.keywords,
+          lesson.syntax,
+          JSON.stringify(lesson.facts),
+          lesson.explanation,
+          lesson.code,
+          lesson.filename,
+          lesson.output,
+          JSON.stringify(lesson.steps),
+          JSON.stringify(lesson.related_languages)
+        ]
+      });
+    } catch (err) {
+      console.error(`Failed on lesson "${lesson.slug}":`);
+      console.error('  message:', err && err.message);
+      console.error('  code:', err && err.code);
+      if (err && err.cause) {
+        console.error('  cause:', JSON.stringify(err.cause, Object.getOwnPropertyNames(err.cause)));
+      }
+      throw err;
+    }
   }
 
   console.log(`Seeded ${lessons.length} lesson(s).`);
 }
 
 seed().catch((err) => {
-  console.error('Seed failed:', err);
+  console.error('Seed failed.');
   process.exit(1);
 });
