@@ -30,35 +30,25 @@ async function seed() {
   await client.execute(SCHEMA_SQL);
 
   for (const lesson of lessons) {
-    try {
-      await client.execute({
-        sql: UPSERT_SQL,
-        args: [
-          lesson.slug,
-          lesson.title,
-          lesson.language,
-          lesson.category,
-          lesson.difficulty,
-          lesson.keywords,
-          lesson.syntax,
-          JSON.stringify(lesson.facts),
-          lesson.explanation,
-          lesson.code,
-          lesson.filename,
-          lesson.output,
-          JSON.stringify(lesson.steps),
-          JSON.stringify(lesson.related_languages)
-        ]
-      });
-    } catch (err) {
-      console.error(`Failed on lesson "${lesson.slug}":`);
-      console.error('  message:', err && err.message);
-      console.error('  code:', err && err.code);
-      if (err && err.cause) {
-        console.error('  cause:', JSON.stringify(err.cause, Object.getOwnPropertyNames(err.cause)));
-      }
-      throw err;
-    }
+    await client.execute({
+      sql: UPSERT_SQL,
+      args: [
+        lesson.slug,
+        lesson.title,
+        lesson.language,
+        lesson.category,
+        lesson.difficulty,
+        lesson.keywords,
+        lesson.syntax,
+        JSON.stringify(lesson.facts),
+        lesson.explanation,
+        lesson.code,
+        lesson.filename,
+        lesson.output,
+        JSON.stringify(lesson.steps),
+        JSON.stringify(lesson.related_languages)
+      ]
+    });
   }
 
   console.log(`Seeded ${lessons.length} lesson(s).`);
@@ -66,5 +56,16 @@ async function seed() {
 
 seed().catch((err) => {
   console.error('Seed failed.');
+  console.error('  message:', err && err.message);
+  console.error('  code:', err && err.code);
+  console.error('  name:', err && err.name);
+  if (err && err.cause) {
+    try {
+      console.error('  cause:', JSON.stringify(err.cause, Object.getOwnPropertyNames(err.cause)));
+    } catch (e) {
+      console.error('  cause (raw):', err.cause);
+    }
+  }
+  console.error('  full error object keys:', Object.keys(err || {}));
   process.exit(1);
 });
