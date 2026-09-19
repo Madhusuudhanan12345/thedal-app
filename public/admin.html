@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Missed searches — தேடல் admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Catamaran:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void: #05060f;
+    --void-deep: #020208;
+    --panel: rgba(18, 20, 38, 0.62);
+    --panel-border: rgba(160, 170, 255, 0.14);
+    --text-primary: #eef0ff;
+    --text-muted: #9aa0c3;
+    --text-faint: #5c6188;
+    --accent-cyan: #5fe3d0;
+    --accent-amber: #f2a154;
+    --focus-ring: rgba(95, 227, 208, 0.5);
+    --radius-lg: 18px;
+    --radius-md: 12px;
+  }
+  *{ box-sizing: border-box; }
+  html, body{ margin:0; height:100%; background: var(--void); font-family:"Inter",sans-serif; color: var(--text-primary); }
+  a{ color: inherit; }
+  code{ font-family:"JetBrains Mono", monospace; }
+
+  #sky{ position: fixed; inset:0; z-index:0; background: var(--void-deep); }
+  .nebula{
+    position: fixed; inset:0; z-index:1; pointer-events:none;
+    background: radial-gradient(50% 40% at 15% 0%, rgba(74,29,71,0.3), transparent 60%);
+    mix-blend-mode: screen;
+  }
+
+  main{ position:relative; z-index:3; max-width: 900px; margin:0 auto; padding: 48px 24px 80px; }
+
+  h1{ font-family:"Space Grotesk",sans-serif; font-size: 1.8rem; margin: 0 0 8px; }
+  .lede{ color: var(--text-muted); font-size: 0.92rem; margin: 0 0 32px; max-width: 62ch; line-height: 1.6; }
+
+  .key-form{
+    display:flex; gap: 10px; margin-bottom: 32px; flex-wrap: wrap;
+  }
+  .key-form input{
+    flex: 1 1 260px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    outline: none;
+  }
+  .key-form input:focus{ border-color: rgba(95,227,208,0.5); box-shadow: 0 0 0 3px var(--focus-ring); }
+  .key-form button{
+    padding: 10px 18px;
+    border-radius: var(--radius-md);
+    border: none;
+    background: linear-gradient(135deg, var(--accent-cyan), #4aa8e0);
+    color: #06121a;
+    font-weight: 600;
+    font-size: 0.88rem;
+    cursor: pointer;
+  }
+
+  table{ width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+  thead th{
+    text-align: left; padding: 10px 12px;
+    color: var(--text-faint); font-weight: 600; font-size: 0.72rem;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--panel-border);
+  }
+  tbody td{ padding: 12px; border-bottom: 1px solid rgba(160,170,255,0.08); }
+  tbody tr:hover{ background: rgba(255,255,255,0.02); }
+  .count-badge{
+    display:inline-block; min-width: 26px; text-align:center;
+    padding: 3px 8px; border-radius: 999px;
+    background: rgba(242,161,84,0.15); color: var(--accent-amber);
+    font-weight: 600; font-size: 0.78rem;
+  }
+  .empty, .status{ color: var(--text-muted); font-size: 0.9rem; }
+</style>
+</head>
+<body>
+
+<canvas id="sky"></canvas>
+<div class="nebula"></div>
+
+<main>
+  <h1>Missed searches</h1>
+  <p class="lede">
+    Every search that didn't match a lesson gets logged here, most-searched
+    first. This is your to-do list for <code>db/lessons-data.js</code>.
+  </p>
+
+  <form class="key-form" id="keyForm">
+    <input id="adminKey" type="password" placeholder="Admin key" autocomplete="off">
+    <button type="submit">Load</button>
+  </form>
+
+  <div id="output"><p class="status">Enter your admin key to load the list.</p></div>
+</main>
+
+<script>
+  (function () {
+    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var canvas = document.getElementById('sky');
+    if (reduceMotion) { canvas.style.display = 'none'; return; }
+    var ctx = canvas.getContext('2d');
+    var stars = [], W, H;
+    function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+    window.addEventListener('resize', resize); resize();
+    for (var i=0;i<120;i++) stars.push({
+      x: Math.random()*W, y: Math.random()*H, r: Math.random()*1.1+0.2,
+      baseAlpha: Math.random()*0.35+0.12, speed: Math.random()*0.012+0.004, phase: Math.random()*Math.PI*2
+    });
+    function tick(){
+      ctx.clearRect(0,0,W,H);
+      for (var i=0;i<stars.length;i++){
+        var s = stars[i]; s.phase += s.speed;
+        var a = Math.max(0, s.baseAlpha + Math.sin(s.phase)*0.15);
+        ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(238,240,255,'+a.toFixed(3)+')'; ctx.fill();
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  })();
+
+  var KEY_STORAGE = 'thedal_admin_key';
+
+  function render(rows) {
+    var output = document.getElementById('output');
+    if (!rows || rows.length === 0) {
+      output.innerHTML = '<p class="empty">No missed searches logged yet.</p>';
+      return;
+    }
+    var rowsHtml = rows.map(function (r) {
+      return '<tr>' +
+        '<td></td>' +
+        '<td><span class="count-badge"></span></td>' +
+        '<td></td>' +
+        '<td></td>' +
+      '</tr>';
+    }).join('');
+
+    output.innerHTML =
+      '<table><thead><tr><th>Query</th><th>Times</th><th>First seen</th><th>Last seen</th></tr></thead>' +
+      '<tbody>' + rowsHtml + '</tbody></table>';
+
+    var trs = output.querySelectorAll('tbody tr');
+    rows.forEach(function (r, i) {
+      var cells = trs[i].querySelectorAll('td');
+      cells[0].textContent = r.query;
+      cells[1].querySelector('.count-badge').textContent = r.hit_count;
+      cells[2].textContent = r.first_seen;
+      cells[3].textContent = r.last_seen;
+    });
+  }
+
+  function load(key) {
+    var output = document.getElementById('output');
+    output.innerHTML = '<p class="status">Loading…</p>';
+    fetch('/api/admin/missed-queries?key=' + encodeURIComponent(key))
+      .then(function (r) {
+        if (r.status === 401) throw new Error('unauthorized');
+        if (!r.ok) throw new Error('failed');
+        return r.json();
+      })
+      .then(function (data) {
+        sessionStorage.setItem(KEY_STORAGE, key);
+        render(data.missed);
+      })
+      .catch(function (err) {
+        if (err.message === 'unauthorized') {
+          output.innerHTML = '<p class="status">That key was rejected. Check ADMIN_KEY in your Netlify environment variables.</p>';
+        } else {
+          output.innerHTML = '<p class="status">Could not reach the backend function.</p>';
+        }
+      });
+  }
+
+  document.getElementById('keyForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var key = document.getElementById('adminKey').value.trim();
+    if (key) load(key);
+  });
+
+  var savedKey = sessionStorage.getItem(KEY_STORAGE);
+  if (savedKey) {
+    document.getElementById('adminKey').value = savedKey;
+    load(savedKey);
+  }
+</script>
+
+</body>
+</html>

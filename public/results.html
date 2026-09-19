@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>for loop in C — தேடல்</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Catamaran:wght@600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void: #05060f;
+    --void-deep: #020208;
+    --panel: rgba(18, 20, 38, 0.62);
+    --panel-soft: rgba(18, 20, 38, 0.4);
+    --panel-border: rgba(160, 170, 255, 0.14);
+    --text-primary: #eef0ff;
+    --text-muted: #9aa0c3;
+    --text-faint: #5c6188;
+    --accent-cyan: #5fe3d0;
+    --accent-amber: #f2a154;
+    --accent-pink: #ff6ac1;
+    --focus-ring: rgba(95, 227, 208, 0.5);
+
+    --syn-keyword: #ff6ac1;
+    --syn-string: #8be28b;
+    --syn-number: #f2a154;
+    --syn-func: #5fe3d0;
+    --syn-comment: #6c7293;
+    --syn-punct: #c9cdf5;
+
+    --radius-lg: 18px;
+    --radius-md: 12px;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{
+    margin: 0;
+    height: 100%;
+    background: var(--void);
+    font-family: "Inter", sans-serif;
+    color: var(--text-primary);
+  }
+
+  code, pre, .mono{
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+  }
+
+  /* ---------- Cosmic backdrop (quieter than the home page) ---------- */
+  #sky{ position: fixed; inset: 0; z-index: 0; background: var(--void-deep); }
+  .nebula{
+    position: fixed; inset: 0; z-index: 1; pointer-events: none;
+    background:
+      radial-gradient(55% 40% at 12% 0%, rgba(74, 29, 71, 0.35), transparent 60%),
+      radial-gradient(45% 35% at 90% 8%, rgba(16, 35, 63, 0.4), transparent 60%);
+    mix-blend-mode: screen;
+  }
+
+  a{ color: inherit; text-decoration: none; }
+  button{ font-family: inherit; }
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    position: relative;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--panel-border);
+    background: rgba(5, 6, 15, 0.7);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .logo{
+    font-family: "Catamaran", sans-serif;
+    font-weight: 700;
+    font-size: 1.4rem;
+    background: linear-gradient(180deg, #ffffff 0%, #a9b0ea 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    flex: 0 0 auto;
+  }
+
+  .mini-search{
+    flex: 1 1 auto;
+    max-width: 620px;
+  }
+  .mini-search .shell{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 6px 4px 16px;
+    background: var(--panel-soft);
+    border: 1px solid var(--panel-border);
+    border-radius: 999px;
+    transition: border-color 180ms ease, box-shadow 180ms ease;
+  }
+  .mini-search .shell:focus-within{
+    border-color: rgba(95, 227, 208, 0.5);
+    box-shadow: 0 0 0 3px var(--focus-ring);
+  }
+  .mini-search svg{ width: 16px; height: 16px; color: var(--text-muted); flex: 0 0 auto; }
+  .mini-search input{
+    flex: 1 1 auto;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-size: 0.92rem;
+    padding: 9px 0;
+  }
+  .mini-search input::placeholder{ color: var(--text-faint); }
+  .mini-search button{
+    flex: 0 0 auto;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(135deg, var(--accent-cyan), #4aa8e0);
+    color: #06121a;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .mini-search button svg{ width: 14px; height: 14px; color: #06121a; }
+
+  .tabs{
+    display: flex;
+    gap: 4px;
+    flex: 0 0 auto;
+  }
+  .tabs a{
+    font-size: 0.86rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    padding: 8px 14px;
+    border-radius: 999px;
+    transition: color 160ms ease, background 160ms ease;
+  }
+  .tabs a.active{
+    color: var(--text-primary);
+    background: rgba(95, 227, 208, 0.12);
+  }
+  .tabs a:not(.active):hover{ color: var(--text-primary); }
+
+  @media (max-width: 860px){
+    .tabs{ display: none; }
+  }
+
+  /* ---------- Result shell ---------- */
+  .results-shell{
+    position: relative;
+    z-index: 3;
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr) 360px;
+    gap: 20px;
+    padding: 24px 28px 60px;
+    max-width: 1440px;
+    margin: 0 auto;
+    align-items: start;
+  }
+
+  @media (max-width: 1180px){
+    .results-shell{ grid-template-columns: 1fr; }
+    .syntax-panel, .editor-panel{ position: static !important; }
+  }
+
+  .panel{
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-lg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  .panel-head{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--panel-border);
+  }
+  .panel-head h2{
+    margin: 0;
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  /* ---------- Left: syntax panel ---------- */
+  .syntax-panel{ position: sticky; top: 20px; }
+
+  .syntax-block{
+    margin: 16px 18px;
+    padding: 14px 16px;
+    background: rgba(2,2,10,0.5);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-md);
+    font-size: 0.82rem;
+    line-height: 1.7;
+    overflow-x: auto;
+  }
+
+  .facts{
+    list-style: none;
+    margin: 0 18px 18px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .facts li{
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    padding-left: 16px;
+    position: relative;
+  }
+  .facts li::before{
+    content: "";
+    position: absolute;
+    left: 0; top: 7px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent-cyan);
+  }
+
+  .lang-row{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 18px 18px;
+  }
+  .lang-chip{
+    font-size: 0.74rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--panel-border);
+    padding: 5px 11px;
+    border-radius: 999px;
+  }
+  .lang-chip.current{
+    color: #06121a;
+    background: var(--accent-amber);
+    border-color: transparent;
+  }
+
+  /* ---------- Middle: answer panel ---------- */
+  .answer-panel{ padding: 26px 30px 30px; }
+
+  .tag-row{
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .tag{
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 999px;
+  }
+  .tag.difficulty{ color: #06121a; background: var(--accent-cyan); }
+  .tag.category{ color: var(--text-muted); background: rgba(255,255,255,0.06); border: 1px solid var(--panel-border); }
+
+  .answer-panel h1{
+    font-family: "Space Grotesk", sans-serif;
+    font-size: clamp(1.5rem, 2.6vw, 2.1rem);
+    font-weight: 700;
+    margin: 0 0 14px;
+    line-height: 1.25;
+  }
+
+  .answer-panel p{
+    font-size: 0.98rem;
+    line-height: 1.75;
+    color: #cdd1f2;
+    margin: 0 0 16px;
+    max-width: 68ch;
+  }
+
+  .answer-panel strong{ color: var(--text-primary); }
+
+  .code-card{
+    margin: 22px 0;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid var(--panel-border);
+    background: rgba(2,2,10,0.6);
+  }
+  .code-card .bar{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 14px;
+    background: rgba(255,255,255,0.03);
+    border-bottom: 1px solid var(--panel-border);
+  }
+  .code-card .bar .fname{
+    font-size: 0.76rem;
+    color: var(--text-muted);
+  }
+  .copy-btn{
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.74rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: transparent;
+    border: 1px solid var(--panel-border);
+    padding: 5px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: color 160ms ease, border-color 160ms ease;
+  }
+  .copy-btn:hover{ color: var(--accent-cyan); border-color: rgba(95,227,208,0.4); }
+  .copy-btn svg{ width: 13px; height: 13px; }
+  .copy-btn.copied{ color: var(--accent-cyan); border-color: rgba(95,227,208,0.4); }
+
+  .code-card pre{
+    margin: 0;
+    padding: 16px 18px;
+    font-size: 0.86rem;
+    line-height: 1.7;
+    overflow-x: auto;
+  }
+
+  .kw{ color: var(--syn-keyword); }
+  .str{ color: var(--syn-string); }
+  .num{ color: var(--syn-number); }
+  .fn{ color: var(--syn-func); }
+  .cm{ color: var(--syn-comment); font-style: italic; }
+  .pn{ color: var(--syn-punct); }
+
+  .divider-line{
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--panel-border), transparent);
+    margin: 26px 0;
+  }
+
+  .why-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+    margin-top: 8px;
+  }
+  .why-item{
+    padding: 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--panel-border);
+    background: rgba(255,255,255,0.02);
+  }
+  .why-item .step{
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--accent-amber);
+    margin-bottom: 6px;
+  }
+  .why-item p{ margin: 0; font-size: 0.84rem; color: var(--text-muted); }
+
+  /* ---------- Right: editor panel ---------- */
+  .editor-panel{ position: sticky; top: 20px; }
+
+  .editor-toolbar{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .lang-select{
+    font-size: 0.76rem;
+    color: var(--text-muted);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    padding: 5px 9px;
+  }
+  .run-btn{
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #06121a;
+    background: linear-gradient(135deg, var(--accent-cyan), #4aa8e0);
+    border: none;
+    padding: 7px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .run-btn svg{ width: 12px; height: 12px; }
+  .run-btn:hover{ filter: brightness(1.06); }
+
+  textarea.editor-surface{
+    display: block;
+    width: 100%;
+    min-height: 260px;
+    resize: vertical;
+    margin: 16px 18px 0;
+    padding: 14px 16px;
+    width: calc(100% - 36px);
+    background: rgba(2,2,10,0.55);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 0.84rem;
+    line-height: 1.65;
+    outline: none;
+    tab-size: 4;
+  }
+  textarea.editor-surface:focus{
+    border-color: rgba(95,227,208,0.45);
+    box-shadow: 0 0 0 3px var(--focus-ring);
+  }
+
+  .console{
+    margin: 14px 18px 18px;
+    padding: 12px 16px;
+    background: rgba(2,2,10,0.7);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-md);
+    font-size: 0.82rem;
+    color: #a9f7d6;
+    min-height: 84px;
+    white-space: pre-wrap;
+  }
+  .console .label{
+    display: block;
+    font-family: "Inter", sans-serif;
+    font-size: 0.68rem;
+    letter-spacing: 0.02em;
+    color: var(--text-faint);
+    margin-bottom: 8px;
+  }
+
+  button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visible{
+    outline: 2px solid var(--accent-cyan);
+    outline-offset: 2px;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="sky"></canvas>
+<div class="nebula"></div>
+
+<header class="topbar">
+  <a class="logo" href="index.html">தேடல்</a>
+  <form class="mini-search" action="results.html" method="get">
+    <div class="shell">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M20 20L16.65 16.65" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <input id="topSearchInput" type="text" name="q" aria-label="Search Thedal">
+      <button type="submit" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M13 6L19 12L13 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+  </form>
+  <nav class="tabs">
+    <a class="active" href="#">Web</a>
+    <a href="#">Images</a>
+    <a href="#">Videos</a>
+    <a href="#">Social</a>
+  </nav>
+</header>
+
+<div class="results-shell">
+
+  <!-- LEFT: syntax reference -->
+  <aside class="panel syntax-panel">
+    <div class="panel-head"><h2>Syntax</h2></div>
+    <pre id="syntaxBlock" class="syntax-block mono">Loading…</pre>
+    <ul id="factsList" class="facts">
+    </ul>
+    <div class="panel-head" style="border-top: 1px solid var(--panel-border); border-bottom:none;">
+      <h2>Also in</h2>
+    </div>
+    <div id="langRow" class="lang-row">
+    </div>
+  </aside>
+
+  <!-- MIDDLE: explanation + code -->
+  <main class="panel answer-panel">
+    <div class="tag-row">
+      <span id="resultDifficulty" class="tag difficulty">…</span>
+      <span id="resultCategory" class="tag category">…</span>
+    </div>
+    <h1 id="resultTitle">Loading…</h1>
+    <p id="resultExplanation">Fetching this lesson from the Thedal backend…</p>
+
+    <div class="code-card">
+      <div class="bar">
+        <span id="codeFilename" class="fname mono">…</span>
+        <button class="copy-btn" data-copy-target="mainCode">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M5 15V6a2 2 0 0 1 2-2h9" stroke="currentColor" stroke-width="1.6"/></svg>
+          Copy
+        </button>
+      </div>
+      <pre id="mainCode" class="mono">Loading…</pre>
+    </div>
+
+    <div class="divider-line"></div>
+
+    <h2 style="font-family:'Space Grotesk',sans-serif; font-size:1rem; margin: 0 0 14px;">What happens, step by step</h2>
+    <div id="stepsGrid" class="why-grid">
+    </div>
+  </main>
+
+  <!-- RIGHT: editor -->
+  <aside class="panel editor-panel">
+    <div class="panel-head">
+      <h2>Try it</h2>
+      <div class="editor-toolbar">
+        <select class="lang-select" aria-label="Language">
+          <option>C</option>
+          <option>C++</option>
+          <option>Python</option>
+          <option>JavaScript</option>
+        </select>
+        <button class="run-btn" id="runBtn">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          Run
+        </button>
+      </div>
+    </div>
+
+    <textarea id="editorSurface" class="editor-surface mono" spellcheck="false">Loading…</textarea>
+
+    <div style="display:flex; justify-content:flex-end; margin: 10px 18px 0;">
+      <button class="copy-btn" id="copyEditorBtn">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M5 15V6a2 2 0 0 1 2-2h9" stroke="currentColor" stroke-width="1.6"/></svg>
+        Copy code
+      </button>
+    </div>
+
+    <div class="console">
+      <span class="label">OUTPUT</span>
+      <span id="consoleText">Waiting for a lesson to load…</span>
+    </div>
+  </aside>
+
+</div>
+
+<script>
+  // Quiet animated starfield (same as home page, dimmer here for readability)
+  (function () {
+    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var canvas = document.getElementById('sky');
+    if (reduceMotion) { canvas.style.display = 'none'; return; }
+    var ctx = canvas.getContext('2d');
+    var stars = [], W, H;
+    function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+    window.addEventListener('resize', resize); resize();
+    for (var i=0;i<160;i++) stars.push({
+      x: Math.random()*W, y: Math.random()*H, r: Math.random()*1.1+0.2,
+      baseAlpha: Math.random()*0.4+0.15, speed: Math.random()*0.012+0.004, phase: Math.random()*Math.PI*2
+    });
+    function tick(){
+      ctx.clearRect(0,0,W,H);
+      for (var i=0;i<stars.length;i++){
+        var s = stars[i]; s.phase += s.speed;
+        var a = Math.max(0, s.baseAlpha + Math.sin(s.phase)*0.18);
+        ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(238,240,255,'+a.toFixed(3)+')'; ctx.fill();
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  })();
+
+  // Copy-to-clipboard for the main explanation code block
+  document.querySelectorAll('.copy-btn[data-copy-target]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var target = document.getElementById(btn.getAttribute('data-copy-target'));
+      var text = target.innerText;
+      navigator.clipboard.writeText(text).then(function(){
+        var original = btn.innerHTML;
+        btn.classList.add('copied');
+        btn.innerHTML = 'Copied!';
+        setTimeout(function(){ btn.innerHTML = original; btn.classList.remove('copied'); }, 1400);
+      });
+    });
+  });
+
+  // Copy-to-clipboard for the editor pane
+  document.getElementById('copyEditorBtn').addEventListener('click', function(){
+    var text = document.getElementById('editorSurface').value;
+    var btn = this;
+    navigator.clipboard.writeText(text).then(function(){
+      var original = btn.innerHTML;
+      btn.classList.add('copied');
+      btn.innerHTML = 'Copied!';
+      setTimeout(function(){ btn.innerHTML = original; btn.classList.remove('copied'); }, 1400);
+    });
+  });
+
+  // Run calls the backend's /api/run route. That route is currently a
+  // placeholder (see routes/run.js) — it doesn't execute real code yet.
+  document.getElementById('runBtn').addEventListener('click', function () {
+    var out = document.getElementById('consoleText');
+    var code = document.getElementById('editorSurface').value;
+    var language = document.querySelector('.lang-select').value;
+    out.textContent = 'Running…';
+    fetch('/api/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ language: language, code: code })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (data) { out.textContent = data.output; })
+      .catch(function () {
+        out.textContent = 'Could not reach the backend function. Are you running "netlify dev" locally?';
+      });
+  });
+
+  // ---- Load a lesson based on ?q= in the URL --------------------------
+  function renderLesson(lesson) {
+    document.title = lesson.title + ' — தேடல்';
+    document.getElementById('resultTitle').textContent = lesson.title;
+    document.getElementById('resultDifficulty').textContent = lesson.difficulty;
+    document.getElementById('resultCategory').textContent = lesson.language + ' · ' + lesson.category;
+    document.getElementById('resultExplanation').textContent = lesson.explanation;
+    document.getElementById('syntaxBlock').textContent = lesson.syntax;
+    document.getElementById('codeFilename').textContent = lesson.filename;
+    document.getElementById('mainCode').textContent = lesson.code;
+    document.getElementById('editorSurface').value = lesson.code;
+    document.getElementById('consoleText').textContent = lesson.output;
+
+    var factsList = document.getElementById('factsList');
+    factsList.innerHTML = '';
+    lesson.facts.forEach(function (fact) {
+      var li = document.createElement('li');
+      li.textContent = fact;
+      factsList.appendChild(li);
+    });
+
+    var stepsGrid = document.getElementById('stepsGrid');
+    stepsGrid.innerHTML = '';
+    lesson.steps.forEach(function (step, i) {
+      var item = document.createElement('div');
+      item.className = 'why-item';
+      var num = String(i + 1).padStart(2, '0');
+      item.innerHTML = '<div class="step">' + num + '</div><p></p>';
+      item.querySelector('p').textContent = step;
+      stepsGrid.appendChild(item);
+    });
+
+    var langRow = document.getElementById('langRow');
+    langRow.innerHTML = '';
+    lesson.related_languages.forEach(function (lang) {
+      var chip = document.createElement('span');
+      chip.className = 'lang-chip' + (lang === lesson.language ? ' current' : '');
+      chip.textContent = lang;
+      langRow.appendChild(chip);
+    });
+  }
+
+  function showNoResult(query) {
+    document.getElementById('resultTitle').textContent = 'No lesson yet for "' + query + '"';
+    document.getElementById('resultExplanation').textContent =
+      'Thedal doesn\'t have this one indexed yet — the lesson library is still small while we\'re building it out. Try "for loop in c" or "python for loop".';
+    document.getElementById('resultDifficulty').textContent = '—';
+    document.getElementById('resultCategory').textContent = '—';
+    document.getElementById('syntaxBlock').textContent = '';
+    document.getElementById('mainCode').textContent = '';
+    document.getElementById('codeFilename').textContent = '';
+    document.getElementById('editorSurface').value = '';
+    document.getElementById('consoleText').textContent = '';
+  }
+
+  function showBackendUnreachable() {
+    document.getElementById('resultTitle').textContent = 'Backend not reachable';
+    document.getElementById('resultExplanation').textContent =
+      'This page needs the backend functions running to fetch results. If you\'re working locally, run "netlify dev" instead of opening this file directly.';
+  }
+
+  (function loadFromQuery() {
+    var params = new URLSearchParams(window.location.search);
+    var q = params.get('q') || '';
+    document.getElementById('topSearchInput').value = q;
+    if (!q) return;
+
+    fetch('/api/search?q=' + encodeURIComponent(q))
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data.results || data.results.length === 0) {
+          showNoResult(q);
+          return;
+        }
+        return fetch('/api/lessons/' + data.results[0].slug)
+          .then(function (r) { return r.json(); })
+          .then(renderLesson);
+      })
+      .catch(showBackendUnreachable);
+  })();
+</script>
+
+</body>
+</html>

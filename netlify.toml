@@ -1,0 +1,45 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+  # Seeds/updates the Turso database on every deploy from lessons-data.js.
+  # "|| true" keeps a first deploy from failing before you've set the
+  # TURSO_DATABASE_URL / TURSO_AUTH_TOKEN env vars — functions still work
+  # once those are set, you just won't have data until the next deploy.
+  command = "npm run seed || true"
+
+[[redirects]]
+  from = "/api/search"
+  to = "/.netlify/functions/search"
+  status = 200
+
+[[redirects]]
+  from = "/api/lessons"
+  to = "/.netlify/functions/lessons-list"
+  status = 200
+
+[[redirects]]
+  from = "/api/lessons/*"
+  to = "/.netlify/functions/lessons-detail/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/api/run"
+  to = "/.netlify/functions/run"
+  status = 200
+
+[[redirects]]
+  from = "/api/healthz"
+  to = "/.netlify/functions/healthz"
+  status = 200
+
+[[redirects]]
+  from = "/api/admin/missed-queries"
+  to = "/.netlify/functions/missed-queries"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"

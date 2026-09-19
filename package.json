@@ -1,0 +1,11 @@
+{
+  "name": "thedal-netlify",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "seed": "node db/seed.js"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.9.0"
+  }
+}

@@ -1,0 +1,4 @@
+node_modules/
+db/thedal.db
+.env
+.netlify/
