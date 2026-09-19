@@ -10,9 +10,6 @@ const { getClient } = require('./client');
 const { SCHEMA_SQL } = require('./schema');
 const lessons = require('./lessons-data');
 
-// No trailing semicolon — some Turso client/protocol versions reject a
-// statement sent over HTTP if it ends with one, treating it as more than
-// one statement.
 const UPSERT_SQL = `
 INSERT INTO lessons
   (slug, title, language, category, difficulty, keywords, syntax, facts, explanation, code, filename, output, steps, related_languages)
@@ -26,27 +23,53 @@ ON CONFLICT(slug) DO UPDATE SET
 `;
 
 async function seed() {
+  console.log('CHECKPOINT: creating client...');
   const client = getClient();
-  await client.execute(SCHEMA_SQL);
+  console.log('CHECKPOINT: client created, running schema...');
 
-  for (const lesson of lessons) {
+  await client.execute(SCHEMA_SQL);
+  console.log('CHECKPOINT: schema OK. Testing one plain query...');
+
+  const test = await client.execute('SELECT 1 AS ok');
+  console.log('CHECKPOINT: plain SELECT worked:', JSON.stringify(test.rows));
+
+  console.log('CHECKPOINT: trying first insert with a tiny fixed statement...');
+  await client.execute({
+    sql: 'INSERT INTO lessons (slug, title, language) VALUES (?, ?, ?)',
+    args: ['diagnostic-test', 'Diagnostic Test', 'C']
+  });
+  console.log('CHECKPOINT: tiny insert worked! Now trying the real upsert for lesson 1...');
+
+  const lesson = lessons[0];
+  await client.execute({
+    sql: UPSERT_SQL,
+    args: [
+      lesson.slug,
+      lesson.title,
+      lesson.language,
+      lesson.category,
+      lesson.difficulty,
+      lesson.keywords,
+      lesson.syntax,
+      JSON.stringify(lesson.facts),
+      lesson.explanation,
+      lesson.code,
+      lesson.filename,
+      lesson.output,
+      JSON.stringify(lesson.steps),
+      JSON.stringify(lesson.related_languages)
+    ]
+  });
+  console.log('CHECKPOINT: full upsert for lesson 1 worked!');
+
+  for (let i = 1; i < lessons.length; i++) {
+    const l = lessons[i];
     await client.execute({
       sql: UPSERT_SQL,
       args: [
-        lesson.slug,
-        lesson.title,
-        lesson.language,
-        lesson.category,
-        lesson.difficulty,
-        lesson.keywords,
-        lesson.syntax,
-        JSON.stringify(lesson.facts),
-        lesson.explanation,
-        lesson.code,
-        lesson.filename,
-        lesson.output,
-        JSON.stringify(lesson.steps),
-        JSON.stringify(lesson.related_languages)
+        l.slug, l.title, l.language, l.category, l.difficulty, l.keywords,
+        l.syntax, JSON.stringify(l.facts), l.explanation, l.code, l.filename,
+        l.output, JSON.stringify(l.steps), JSON.stringify(l.related_languages)
       ]
     });
   }
@@ -58,14 +81,5 @@ seed().catch((err) => {
   console.error('Seed failed.');
   console.error('  message:', err && err.message);
   console.error('  code:', err && err.code);
-  console.error('  name:', err && err.name);
-  if (err && err.cause) {
-    try {
-      console.error('  cause:', JSON.stringify(err.cause, Object.getOwnPropertyNames(err.cause)));
-    } catch (e) {
-      console.error('  cause (raw):', err.cause);
-    }
-  }
-  console.error('  full error object keys:', Object.keys(err || {}));
   process.exit(1);
 });
